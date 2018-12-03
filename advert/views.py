@@ -1,20 +1,67 @@
 from django.shortcuts import render
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Advert, Category, ImageAd
-from .serializers import AdvertSer, AdRequestGetSer, CategorySer, CategoryRecSer
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import IsAuthenticated
+
+from .models import Advert, Category, ImageAd
+from .serializers import (
+    AdvertSer, AdRequestGetSer, CategorySer,
+    CategoryRecSer, AdvertCreateSerializer
+)
 
 
 class AdvertCrudView(APIView):
     """
-    Тут мы пишем супер ЯЕстьГрут
-    Который смотрит объект, меняет, добавляет и удаляет
-    С помощью запросиков
+    Тут мы пишем супер ЯЕстьГрут.
+    Который смотрит объект, меняет, добавляет и удаляет.
+    С помощью запросиков.
+
     """
+    serializer_classes = {
+        'get': {
+            'in': AdRequestGetSer,
+            'out': AdvertSer
+        },
+        'post': {
+            'in': AdvertCreateSerializer,
+            'out': AdvertSer
+        }
+    }
+
+    def get_serializer_class(self, for_req=False):
+        """
+        Возвращает сериалайзер для обработки данных.
+
+        :param bool for_req: Флаг, указвающий для чего сериалайзер.
+
+        :return: Сериалайзер для обработки запроса.
+        :rtype: type(rest_framework.serializers.Serializer)
+
+        """
+        return self.serializer_classes.get(
+            self.request.method.lower(), {}).get('in' if for_req else 'out')
+
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Проверяем авторизацию для метода.
+
+        """
+        if request.method.lower() == 'get':
+            return super().dispatch(request, *args, **kwargs)
+        if request.user and request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+
+        return Response(status=401)
+
     def get(self, request, *args, **kwargs):
+        """
+        Просмотреть конкретное объявление.
+
+        """
         # Получаем данные от пользователя. Если данные плохие, возврвщаем ошибку 400.
-        reqser = AdRequestGetSer(data=request.query_params)
+        reqser = self.get_serializer_class(True)(data=request.query_params)
         if reqser.is_valid() is True:
             pk = reqser.validated_data["pk"]
         else:
@@ -27,11 +74,23 @@ class AdvertCrudView(APIView):
             return Response(status=404)
 
         # Стерилизуем объект из БД, и возвращаем пользователюю
-        ser = AdvertSer(instance=obj)
+        ser = self.get_serializer_class()(instance=obj)
         return Response(data=ser.data)
 
     def post(self, request, *args, **kwargs):
-        pass
+        """
+        Создание объявлния.
+
+        """
+        data = request.data.copy()
+        data['author'] = request.user
+
+        reqser = self.get_serializer_class(True)(data=request.data)
+        reqser.is_valid(raise_exception=True)
+
+        reqser.save()
+
+        return Response(data=self.get_serializer_class()(reqser.instance).data, status=201)
 
     def put(self, request, *args, **kwargs):
         pass

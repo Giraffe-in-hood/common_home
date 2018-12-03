@@ -16,10 +16,20 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 from advert.views import AdvertCrudView, AdvertListView, CategoryListView
+from users.views import LoginView, LogoutView, RegistrationView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^advert/$', AdvertCrudView.as_view()),
     url(r'^advert/list/$', AdvertListView.as_view()),
     url(r'^category/list/$', CategoryListView.as_view()),
+]
+
+
+# register
+
+urlpatterns += [
+    url(r'auth/login/$', LoginView.as_view()),
+    url(r'auth/logout/$', LogoutView.as_view()),
+    url(r'auth/register/$', RegistrationView.as_view()),
 ]

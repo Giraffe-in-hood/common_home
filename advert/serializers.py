@@ -46,3 +46,13 @@ class CategoryRecSer(serializers.Serializer):
         if cts and not Category.objects.filter(pk__in=cts).exists():
             raise ValidationError('ids is required field')
         return attrs
+
+
+class AdvertCreateSerializer(serializers.ModelSerializer):
+    """
+    Сериалайзер для создания объявления.
+
+    """
+    class Meta:
+        model = Advert
+        fields = 'name', 'text', 'categories', 'author',
