@@ -55,4 +55,14 @@ class AdvertCreateSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Advert
-        fields = 'name', 'text', 'categories', 'author',
+        fields = 'name', 'text', 'categories', 'types', 'author',
+
+
+class AdvertUpdateSerializer(serializers.ModelSerializer):
+    """
+    Сериалайзер для изменения объявления.
+
+    """
+    class Meta:
+        model = Advert
+        fields = 'name', 'text', 'categories', 'types', 'status'

@@ -17,12 +17,23 @@ class Advert (models.Model):
         (1, "Предложить помощь"),
         (2, "Нужна помощь"),
     )
+    STATUS_DRAFT = 1
+    STATUS_PUBLIC = 2
+    STATUS_ARCHIVE = 3
+    STATUSES = (
+        (STATUS_DRAFT, 'Черновик'),
+        (STATUS_PUBLIC, 'Опубликовано'),
+        (STATUS_ARCHIVE, 'Заархивировано')
+    )
+
     name = models.CharField(max_length=255)
     text = models.TextField()
     date_create = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(get_user_model(), related_name='advert')
     types = models.IntegerField(choices=TYPES)
     categories = models.ManyToManyField(Category)
+
+    status = models.PositiveSmallIntegerField('Статус объявления', choices=STATUSES, default=STATUS_DRAFT)
 
     def __str__(self):
         return self.name

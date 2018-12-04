@@ -2,17 +2,39 @@ from django.shortcuts import render
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Advert, Category, ImageAd
 from .serializers import (
     AdvertSer, AdRequestGetSer, CategorySer,
-    CategoryRecSer, AdvertCreateSerializer
+    CategoryRecSer, AdvertCreateSerializer,
+    AdvertUpdateSerializer
 )
 
 
-class AdvertCrudView(APIView):
+class SearchSerializerMixin(object):
+    """
+    Класс для предоставления поиска сериалайзеров.
+
+    """
+    serializer_classes = {}
+
+    def get_serializer_class(self, for_req=False):
+        """
+        Возвращает сериалайзер для обработки данных.
+
+        :param bool for_req: Флаг, указвающий для чего сериалайзер.
+
+        :return: Сериалайзер для обработки запроса.
+        :rtype: type(rest_framework.serializers.Serializer)
+
+        """
+        return self.serializer_classes.get(
+            self.request.method.lower(), {}).get('in' if for_req else 'out')
+
+
+class AdvertCrudView(APIView, SearchSerializerMixin):
     """
     Тут мы пишем супер ЯЕстьГрут.
     Который смотрит объект, меняет, добавляет и удаляет.
@@ -29,19 +51,6 @@ class AdvertCrudView(APIView):
             'out': AdvertSer
         }
     }
-
-    def get_serializer_class(self, for_req=False):
-        """
-        Возвращает сериалайзер для обработки данных.
-
-        :param bool for_req: Флаг, указвающий для чего сериалайзер.
-
-        :return: Сериалайзер для обработки запроса.
-        :rtype: type(rest_framework.serializers.Serializer)
-
-        """
-        return self.serializer_classes.get(
-            self.request.method.lower(), {}).get('in' if for_req else 'out')
 
     def dispatch(self, request, *args, **kwargs):
         """
@@ -92,16 +101,71 @@ class AdvertCrudView(APIView):
 
         return Response(data=self.get_serializer_class()(reqser.instance).data, status=201)
 
+
+class AdvertRetrieveUpdateDeleteView(APIView, SearchSerializerMixin):
+    """
+    Вью для получения изменения удаления объявления.
+
+    """
+    model = Advert
+    serializer_classes = {
+        'get': {
+            'out': AdvertSer
+        },
+        'put': {
+            'in': AdvertUpdateSerializer,
+            'out': AdvertSer
+        }
+    }
+
+    def get_object(self, check_author=False):
+        queryset = Advert.objects.all()
+        if check_author:
+            queryset = queryset.filter(author=self.request.user)
+        return queryset.get(pk=self.kwargs['pk'])
+
+    def get(self, request, *args, **kwargs):
+        """
+        Просмотр конкретного объявления.
+
+        """
+        obj = self.get_object(False)
+        if obj.author != self.request.user:
+            if obj.status != Advert.STATUS_PUBLIC:
+                return Response(status=403)
+
+        data = self.get_serializer_class()(obj).data
+        return Response(data=data, status=200)
+
     def put(self, request, *args, **kwargs):
-        pass
+        """
+        Изменение объявления.
+
+        """
+        obj = self.get_object(True)
+        ser = self.get_serializer_class(for_req=True)(obj, data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        ser.save()
+        data = self.get_serializer_class(for_req=False)(ser.instance).data
+
+        return Response(data=data, status=200)
 
     def delete(self, request, *args, **kwargs):
-        pass
+        """
+        Удаление объявления
+
+        """
+        obj = self.get_object(True)
+        obj.delete()
+
+        return Response(status=204)
 
 
 class AdvertListView(ListAPIView):
     """
     Список объявлений
+
     """
     serializer_class = AdvertSer
     queryset = Advert.objects.all()

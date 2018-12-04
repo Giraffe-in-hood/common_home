@@ -15,12 +15,13 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from advert.views import AdvertCrudView, AdvertListView, CategoryListView
+from advert.views import AdvertCrudView, AdvertListView, CategoryListView, AdvertRetrieveUpdateDeleteView
 from users.views import LoginView, LogoutView, RegistrationView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^advert/$', AdvertCrudView.as_view()),
+    url(r'^advert/(?P<pk>\d+)/$', AdvertRetrieveUpdateDeleteView.as_view()),
     url(r'^advert/list/$', AdvertListView.as_view()),
     url(r'^category/list/$', CategoryListView.as_view()),
 ]
