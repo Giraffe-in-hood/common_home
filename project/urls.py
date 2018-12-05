@@ -15,20 +15,34 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from advert.views import AdvertCrudView, AdvertListView, CategoryListView, AdvertRetrieveUpdateDeleteView
+
+from drf_auto.views import DRFDocsView
+
+from advert.views import (
+    AdvertCrudView, AdvertListView, CategoryListView, AdvertRetrieveUpdateDeleteView,
+    ImageAdUploadView, ImageAdDeleteView
+)
 from users.views import LoginView, LogoutView, RegistrationView
+
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^advert/$', AdvertCrudView.as_view()),
-    url(r'^advert/(?P<pk>\d+)/$', AdvertRetrieveUpdateDeleteView.as_view()),
-    url(r'^advert/list/$', AdvertListView.as_view()),
+    url(r'^api-docs/$', DRFDocsView.as_view(), name='docs'),
     url(r'^category/list/$', CategoryListView.as_view()),
 ]
 
 
-# register
+# advert
+urlpatterns += [
+    url(r'^advert/$', AdvertCrudView.as_view()),
+    url(r'^advert/(?P<pk>\d+)/$', AdvertRetrieveUpdateDeleteView.as_view()),
+    url(r'^advert/list/$', AdvertListView.as_view()),
+    url(r'^advert/images/(?P<advert>\d+)/$', ImageAdUploadView.as_view()),
+    url(r'^advert/images/(?P<advert>\d+)/delete/(?P<pk>\d+)/$', ImageAdDeleteView.as_view())
+]
 
+
+# register
 urlpatterns += [
     url(r'auth/login/$', LoginView.as_view()),
     url(r'auth/logout/$', LogoutView.as_view()),

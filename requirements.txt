@@ -1,3 +1,4 @@
 django==1.11
 Pillow
 djangorestframework
+git+https://github.com/nxexox/django-rest-framework-auto.git

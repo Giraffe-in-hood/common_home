@@ -21,6 +21,12 @@ class ImageSer(serializers.ModelSerializer):
         fields = 'image',
 
 
+class ImageCreateSer(serializers.ModelSerializer):
+    class Meta:
+        model = ImageAd
+        fields = '__all__'
+
+
 class AdvertSer(serializers.ModelSerializer):
     author = AuthorSer()
     images = ImageSer(many=True, source='ad_images')

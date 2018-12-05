@@ -1,15 +1,15 @@
-from django.shortcuts import render
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Advert, Category, ImageAd
 from .serializers import (
     AdvertSer, AdRequestGetSer, CategorySer,
     CategoryRecSer, AdvertCreateSerializer,
-    AdvertUpdateSerializer
+    AdvertUpdateSerializer, ImageCreateSer
 )
 
 
@@ -164,7 +164,7 @@ class AdvertRetrieveUpdateDeleteView(APIView, SearchSerializerMixin):
 
 class AdvertListView(ListAPIView):
     """
-    Список объявлений
+    Список объявлений.
 
     """
     serializer_class = AdvertSer
@@ -195,14 +195,74 @@ class AdvertListView(ListAPIView):
 
 class CategoryListView(ListAPIView):
     """
-    Список категорий
+    Список категорий.
+
     """
     serializer_class = CategorySer
     queryset = Category.objects.all()
 
 
+class ImageAdUploadView(APIView, SearchSerializerMixin):
+    """
+    Загрузка изображений к объявлению.
+
+    """
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['post',]
+    parser_classes = (JSONParser, MultiPartParser, FormParser,)
+    serializer_classes = {
+        'post': ImageCreateSer
+    }
+
+    def get_advert(self):
+        return get_object_or_404(
+            Advert.objects.filter(author=self.request.user),
+            pk=self.kwargs['advert']
+        )
+
+    def post(self, request, *args, **kwargs):
+        """
+        Загрузка изображния.
+
+        """
+        # Прорасываем данные
+        advert = self.get_advert()
+        data = request.data.copy()
+        data['advert'] = advert
+
+        # Валидируем
+        ser = self.get_serializer_class(for_req=True)(data=request.data)
+        ser.is_valid(raise_exception=True)
+
+        # Сохраняем
+        ser.save()
+
+        # Отдаем ответ
+        return Response(data=self.get_serializer_class()(ser.instance).data, status=201)
 
 
+class ImageAdDeleteView(APIView, SearchSerializerMixin):
+    """
+    Удаление изображений у объявления.
 
+    """
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['delete']
 
+    def get_advert(self):
+        return get_object_or_404(
+            Advert.objects.filter(author=self.request.user),
+            pk=self.kwargs['advert']
+        )
 
+    def delete(self, request, *args, **kwargs):
+        """
+        Удаление изображения.
+
+        """
+        advert = self.get_advert()
+        img = get_object_or_404(ImageAd.objects.filter(advert=advert), pk=kwargs['pk'])
+
+        img.delete()
+
+        return Response(status=204)

@@ -39,9 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'drf_auto',
+
     'advert',
-    "rest_framework",
-    "users",
+    'rest_framework',
+    'users',
+
 ]
 
 MIDDLEWARE = [
@@ -123,3 +127,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+REST_FRAMEWORK_AUTO = {
+    'DOCS': {
+        'HIDE_DOCS': False,
+        'SERIALIZERS_ATTR_NAME': 'serializer_classes',
+    }
+}
